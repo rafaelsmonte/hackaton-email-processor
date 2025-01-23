@@ -1,74 +1,99 @@
 const AWS = require("aws-sdk");
-const ses = new AWS.SES({ region: process.env.AWS_REGION });
+const AmazonCognitoIdentity = require("amazon-cognito-identity-js");
+
+const ses = new AWS.SES();
+const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
+
+class CustomError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
+// TODO allow this permission: AccessDenied: User `arn:aws:sts::347116569372:assumed-role/LabRole/email-processor' is not authorized to perform `ses:SendEmail' on resource `arn:aws:ses:us-east-1:347116569372:identity/sender@example.com'
 
 exports.handler = async (event) => {
-  console.log("event body:");
-  console.log(event.body);
+  console.log("event:");
+  console.log(event);
 
   try {
-    let body;
+    for (const record of event.Records) {
+      if (record.EventSource === "aws:sns") {
+        const snsMessage = record.Sns.Message;
 
-    if (typeof event.body === "string") {
-      try {
-        body = JSON.parse(event.body);
-      } catch (error) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ message: "Invalid JSON format" }),
-        };
+        const message = JSON.parse(snsMessage);
+
+        console.log("Message received: ", message);
+
+        let subject;
+        let emailBody;
+        let user;
+
+        const type = message.type;
+        const sender = message.sender;
+        const target = message.target;
+        const payload = message.payload;
+
+        if (sender === "VIDEO_API_SERVICE" && target === "EMAIL_SERVICE") {
+          if (type === "MSG_SEND_SNAPSHOT_EXTRACTION_SUCCESS") {
+            subject = "Video Processing Success";
+            emailBody = `\nVideo Description: ${payload["videoDescription"]}\nVideo URL: ${payload["videoUrl"]}\nVideo Snapshots URL: ${payload["videoSnapshotsUrl"]}`;
+          } else if (type === "MSG_SEND_SNAPSHOT_EXTRACTION_ERROR") {
+            subject = "Video Processing Error";
+            emailBody = `\nVideo Description: ${payload["videoDescription"]}\nError message: ${payload["errorMessage"]}\nError description: ${payload["errorDescription"]}`;
+          } else {
+            console.error("Unknown message type");
+            continue;
+          }
+
+          try {
+            user = await getUser(payload["userId"]);
+          } catch (error) {
+            continue;
+          }
+
+          const fromEmail = "sender@example.com"; // TODO ??
+          const toEmail = user.getUsername();
+
+          const params = {
+            Source: fromEmail,
+            Destination: {
+              ToAddresses: [toEmail],
+            },
+            Message: {
+              Subject: {
+                Data: subject,
+              },
+              Body: {
+                Text: {
+                  Data: emailBody,
+                },
+              },
+            },
+          };
+
+          console.log("Email message params: ", params);
+          console.log("Email body: ", emailBody);
+
+          const result = await ses.sendEmail(params).promise();
+          console.log("Email sent successfully: ", result);
+        }
       }
-    } else {
-      body = event.body;
     }
 
-    // TODO handle notification from sns topic
-    const { sender, target, type, payload } = body;
-
-    let subject;
-    let emailBody;
-
-    if (type === "MSG_SEND_SNAPSHOT_EXTRACTION_SUCCESS") {
-      subject = "Video Processing Success";
-      emailBody = `Video Description:${payload["videoDescription"]}\nVideo URL: ${payload["videoUrl"]}\nVideo Snapshots URL: ${payload["videoSnapshotsUrl"]}`;
-    } else if (type === "MSG_SEND_SNAPSHOT_EXTRACTION_ERROR") {
-      subject = "Video Processing Error";
-      emailBody = `Video Description:${payload["videoDescription"]}\Error message: ${payload["errorMessage"]}\nError description: ${payload["errorDescription"]}`;
-    } else {
-      console.error("Unknown message type");
-      return;
-    }
-
-    const user = await getUser(payload["userId"]);
-
-    if (!user) {
-      return;
-    }
-
-    const fromEmail = "sender@example.com"; // Must be verified in SES if in sandbox
-    const toEmail = user.getUsername(); // Must be verified in SES if in sandbox
-
-    const params = {
-      Source: fromEmail,
-      Destination: {
-        ToAddresses: [toEmail],
-      },
-      Message: {
-        Subject: {
-          Data: subject,
-        },
-        Body: {
-          Text: {
-            Data: emailBody,
-          },
-        },
-      },
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: "Event processed successfully" }),
     };
-
-    const result = await ses.sendEmail(params).promise();
-    console.log("Email sent successfully:", result);
   } catch (error) {
-    console.error("An error has occurred: ");
-    console.error(error);
+    console.error("Error processing event: ", error);
+    return {
+      statusCode: error.statusCode || 500,
+      body: JSON.stringify({
+        error: error.message || "Internal Server Error",
+      }),
+    };
   }
 };
 
@@ -97,8 +122,7 @@ async function getUser(userId) {
       return new AmazonCognitoIdentity.CognitoUser(userData);
     }
 
-    console.error("User not found");
-    return null;
+    throw new CustomError("User not found", 404);
   } catch (error) {
     console.error("Error getting user by sub: ", error);
     throw error; // Re-throw errors for further handling
