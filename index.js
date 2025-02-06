@@ -11,8 +11,6 @@ class CustomError extends Error {
   }
 }
 
-// TODO allow this permission: AccessDenied: User `arn:aws:sts::347116569372:assumed-role/LabRole/email-processor' is not authorized to perform `ses:SendEmail' on resource `arn:aws:ses:us-east-1:347116569372:identity/sender@example.com'
-
 exports.handler = async (event) => {
   console.log("event:");
   console.log(event);
@@ -28,7 +26,7 @@ exports.handler = async (event) => {
 
         let subject;
         let emailBody;
-        let user;
+        let userEmail;
 
         const type = message.type;
         const sender = message.sender;
@@ -48,13 +46,14 @@ exports.handler = async (event) => {
           }
 
           try {
-            user = await getUser(payload["userId"]);
+            userEmail = await getUserEmail(payload["userId"]);
           } catch (error) {
+            console.error("Error getting user: ", error);
             continue;
           }
 
           const fromEmail = "sender@example.com"; // TODO ??
-          const toEmail = user.getUsername();
+          const toEmail = userEmail;
 
           const params = {
             Source: fromEmail,
@@ -97,7 +96,7 @@ exports.handler = async (event) => {
   }
 };
 
-async function getUser(userId) {
+async function getUserEmail(userId) {
   try {
     const params = {
       UserPoolId: process.env.USER_POOL_ID,
@@ -109,17 +108,7 @@ async function getUser(userId) {
       .promise();
 
     if (data.Users && data.Users.length > 0) {
-      const user = data.Users[0];
-
-      const userData = {
-        Username: user.Username,
-        Pool: new AmazonCognitoIdentity.CognitoUserPool({
-          UserPoolId: process.env.USER_POOL_ID,
-          ClientId: process.env.CLIENT_ID,
-        }),
-      };
-
-      return new AmazonCognitoIdentity.CognitoUser(userData);
+      return data.Users[0].Username;
     }
 
     throw new CustomError("User not found", 404);
