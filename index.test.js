@@ -3,6 +3,7 @@ const AWS = require("aws-sdk");
 const AmazonCognitoIdentity = require("amazon-cognito-identity-js");
 
 process.env.AWS_REGION = "us-east-1";
+process.env.SENDER_EMAIL = "sender@example.com";
 process.env.USER_POOL_ID = "test-user-pool-id";
 process.env.CLIENT_ID = "test-client-id";
 process.env.AWS_ACCESS_KEY_ID = "mockAccessKey";
@@ -149,6 +150,7 @@ describe("Lambda Handler", () => {
 
     // Verify SES was called with the correct parameters
     expect(AWS.SES.prototype.sendEmail).toHaveBeenCalledWith({
+      process.env.
       Source: "sender@example.com",
       Destination: {
         ToAddresses: ["user@example.com"], // Ensure this matches the expected email
