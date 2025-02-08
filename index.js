@@ -52,7 +52,7 @@ exports.handler = async (event) => {
             continue;
           }
 
-          const fromEmail = "sender@example.com"; // TODO ??
+          const fromEmail = process.env.SENDER_EMAIL;
           const toEmail = userEmail;
 
           const params = {
