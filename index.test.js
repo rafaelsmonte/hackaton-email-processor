@@ -150,7 +150,6 @@ describe("Lambda Handler", () => {
 
     // Verify SES was called with the correct parameters
     expect(AWS.SES.prototype.sendEmail).toHaveBeenCalledWith({
-      process.env.
       Source: "sender@example.com",
       Destination: {
         ToAddresses: ["user@example.com"], // Ensure this matches the expected email
