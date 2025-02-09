@@ -13,3 +13,8 @@ This project implements lambda function to integrate with an external email serv
 ### Coverage
 
 [![Coverage Status](https://coveralls.io/repos/github/rafaelsmonte/tech-challenge-7soat-payment-service/badge.svg)](https://coveralls.io/github/rafaelsmonte/tech-challenge-7soat-payment-service)
+
+
+![Coverage](docs/evidences/email-processor-coverage.png)
+![Sucessful pipeline on push](docs/evidences/email-processor-pipeline.png)
+![Sucessful pipeline on pr](docs/evidences/email-processor-pipeline-pr.png)
