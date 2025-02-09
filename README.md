@@ -12,7 +12,7 @@ This project implements lambda function to integrate with an external email serv
 
 ### Coverage
 
-[![Coverage Status](https://coveralls.io/repos/github/rafaelsmonte/tech-challenge-7soat-payment-service/badge.svg)](https://coveralls.io/github/rafaelsmonte/tech-challenge-7soat-payment-service)
+[![Coverage Status](https://coveralls.io/repos/github/rafaelsmonte/hackaton-email-processor/badge.svg?branch=main)](https://coveralls.io/github/rafaelsmonte/hackaton-email-processor?branch=main)
 
 
 ![Coverage](docs/evidences/email-processor-coverage.png)
