@@ -2,6 +2,13 @@
 
 This function listens for event notifications and sends email alerts based on video processing outcomes. It integrates with AWS SNS for event reception, AWS Cognito for user email retrieval, and AWS SES for email delivery.
 
+```mermaid
+sequenceDiagram
+AWS SNS->>Email Service: forward message
+Email Service->>AWS Cognito: getUserEmail(userId)
+Email Service->>AWS SES: sendEmail(userEmail)
+```
+
 ### **1. Receiving the Event Notification**
 
 - The function is triggered by incoming event notifications.
