@@ -3,6 +3,7 @@
 This project implements lambda function to integrate with an external email service for sending email to users.
 
 - [Documentation](docs/service.md)
+- [CI/CD](docs/ci-cd.md)
 
 ### Authors
 
