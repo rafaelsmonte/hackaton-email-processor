@@ -15,7 +15,6 @@ This project implements lambda function to integrate with an external email serv
 
 [![Coverage Status](https://coveralls.io/repos/github/rafaelsmonte/hackaton-email-processor/badge.svg?branch=main)](https://coveralls.io/github/rafaelsmonte/hackaton-email-processor?branch=main)
 
-
 ![Coverage](docs/evidences/email-processor-coverage.png)
 ![Sucessful pipeline on push](docs/evidences/email-processor-pipeline.png)
 ![Sucessful pipeline on pr](docs/evidences/email-processor-pipeline-pr.png)
